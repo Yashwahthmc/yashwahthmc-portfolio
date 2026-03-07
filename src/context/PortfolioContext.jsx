@@ -18,7 +18,7 @@ const PortfolioContext = createContext();
 export const usePortfolio = () => useContext(PortfolioContext);
 
 // ─── DEFAULT DATA (used only if Firestore is empty at first launch) ───────────
-const defaultPersonalInfo = {
+export const defaultPersonalInfo = {
   name: 'Vairamuthu',
   brandName: 'VM',
   heroImage: 'https://raw.githubusercontent.com/ahampriyanshu/ahampriyanshu/master/assets/coder.gif',
@@ -87,47 +87,52 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     const isOffline = import.meta.env.VITE_OFFLINE_MODE === 'true';
     
-    if (isOffline) {
+    // Initialize unsub variables with empty functions to avoid cleanup errors in offline mode
+    let unsubExp = () => {};
+    let unsubProj = () => {};
+    let unsubDocs = () => {};
+    let unsubCerts = () => {};
+
+    if (!isOffline) {
+      const init = async () => {
+        try {
+          const [pi, ai, sl] = await Promise.all([
+            loadDoc('portfolio/personalInfo', defaultPersonalInfo),
+            loadDoc('portfolio/aboutInfo', defaultAboutInfo),
+            loadDoc('portfolio/socialLinks', defaultSocialLinks),
+          ]);
+          setPersonalInfoState(pi);
+          setAboutInfoState({ ...defaultAboutInfo, ...ai });
+          setSocialLinksState(sl);
+        } catch (e) {
+          console.error('Error loading data from Firestore:', e);
+          console.warn('Using default data as fallback. Make sure Firestore is enabled in Firebase Console.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      init();
+
+      // Real-time listeners for collections
+      unsubExp = onSnapshot(collection(db, 'experiences'), snap => {
+        setExperiences(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      unsubProj = onSnapshot(collection(db, 'projects'), snap => {
+        setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      unsubDocs = onSnapshot(collection(db, 'documents'), snap => {
+        setDocuments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      unsubCerts = onSnapshot(collection(db, 'certificates'), snap => {
+        setCertificates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+    } else {
       console.log('Running in OFFLINE mode (Firebase bypassed)');
       setPersonalInfoState(defaultPersonalInfo);
       setAboutInfoState(defaultAboutInfo);
       setSocialLinksState(defaultSocialLinks);
       setLoading(false);
-      return;
     }
-
-    const init = async () => {
-      try {
-        const [pi, ai, sl] = await Promise.all([
-          loadDoc('portfolio/personalInfo', defaultPersonalInfo),
-          loadDoc('portfolio/aboutInfo', defaultAboutInfo),
-          loadDoc('portfolio/socialLinks', defaultSocialLinks),
-        ]);
-        setPersonalInfoState(pi);
-        setAboutInfoState({ ...defaultAboutInfo, ...ai });
-        setSocialLinksState(sl);
-      } catch (e) {
-        console.error('Error loading data from Firestore:', e);
-        console.warn('Using default data as fallback. Make sure Firestore is enabled in Firebase Console.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-
-    // Real-time listeners for collections
-    const unsubExp = onSnapshot(collection(db, 'experiences'), snap => {
-      setExperiences(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubProj = onSnapshot(collection(db, 'projects'), snap => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubDocs = onSnapshot(collection(db, 'documents'), snap => {
-      setDocuments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubCerts = onSnapshot(collection(db, 'certificates'), snap => {
-      setCertificates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
 
     return () => {
       unsubExp();

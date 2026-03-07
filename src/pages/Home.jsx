@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Download, Terminal } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { usePortfolio } from '../context/PortfolioContext';
+import { usePortfolio, defaultPersonalInfo } from '../context/PortfolioContext';
 import './Home.css';
 
 const Home = () => {
