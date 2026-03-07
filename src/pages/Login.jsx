@@ -18,6 +18,21 @@ const Login = () => {
     setError('');
     setIsLoading(true);
 
+    const isOffline = import.meta.env.VITE_OFFLINE_MODE === 'true';
+
+    if (isOffline) {
+      // Mock login for testing
+      setTimeout(() => {
+        if (email === 'admin@portfolio.com' && password === 'admin123') {
+          navigate('/dashboard');
+        } else {
+          setIsLoading(false);
+          setError('Offline Mode: Use admin@portfolio.com / admin123');
+        }
+      }, 500);
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // Firebase login successful

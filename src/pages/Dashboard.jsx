@@ -137,6 +137,7 @@ const Dashboard = () => {
     await addDocument({ title: newTitle, type: newDocUrl.includes('pdf') ? 'PDF' : 'DOC', url: newDocUrl });
     setNewTitle('');
     setNewDocUrl('');
+    alert('✅ Document added!');
   };
   const handleAddCert = async (e) => {
     e.preventDefault();

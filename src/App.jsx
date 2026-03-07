@@ -29,7 +29,7 @@ const AppInner = () => {
   
   if (loading || authLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', background: 'var(--bg-main)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', background: 'var(--bg-color)' }}>
         <div style={{ width: 60, height: 60, border: '4px solid rgba(0,240,255,0.15)', borderTop: '4px solid var(--primary-color)', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
         <p style={{ color: 'var(--primary-color)', letterSpacing: 2, fontSize: '1rem' }}>Loading Portfolio...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

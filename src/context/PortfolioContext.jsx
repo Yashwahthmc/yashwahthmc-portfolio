@@ -85,6 +85,17 @@ export const PortfolioProvider = ({ children }) => {
 
   // ─── LOAD ALL DATA FROM FIRESTORE ON MOUNT ─────────────────────────────────
   useEffect(() => {
+    const isOffline = import.meta.env.VITE_OFFLINE_MODE === 'true';
+    
+    if (isOffline) {
+      console.log('Running in OFFLINE mode (Firebase bypassed)');
+      setPersonalInfoState(defaultPersonalInfo);
+      setAboutInfoState(defaultAboutInfo);
+      setSocialLinksState(defaultSocialLinks);
+      setLoading(false);
+      return;
+    }
+
     const init = async () => {
       try {
         const [pi, ai, sl] = await Promise.all([
@@ -128,6 +139,13 @@ export const PortfolioProvider = ({ children }) => {
 
   // ─── AUTH STATE OBSERVER ───────────────────────────────────────────────────
   useEffect(() => {
+    const isOffline = import.meta.env.VITE_OFFLINE_MODE === 'true';
+    if (isOffline) {
+       // In offline mode, provide a mock user so dashboard is accessible
+       setUser({ email: 'admin@portfolio.com', uid: 'offline-admin' });
+       setAuthLoading(false);
+       return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
@@ -138,45 +156,83 @@ export const PortfolioProvider = ({ children }) => {
   // ─── SETTERS that ALSO write to Firestore ─────────────────────────────────
   const setPersonalInfo = async (data) => {
     setPersonalInfoState(data);
-    await setDoc(doc(db, 'portfolio', 'personalInfo'), data);
+    if (import.meta.env.VITE_OFFLINE_MODE !== 'true') {
+      await setDoc(doc(db, 'portfolio', 'personalInfo'), data);
+    }
   };
 
   const setAboutInfo = async (data) => {
     setAboutInfoState(data);
-    await setDoc(doc(db, 'portfolio', 'aboutInfo'), data);
+    if (import.meta.env.VITE_OFFLINE_MODE !== 'true') {
+      await setDoc(doc(db, 'portfolio', 'aboutInfo'), data);
+    }
   };
 
   const setSocialLinks = async (data) => {
     setSocialLinksState(data);
-    await setDoc(doc(db, 'portfolio', 'socialLinks'), data);
+    if (import.meta.env.VITE_OFFLINE_MODE !== 'true') {
+      await setDoc(doc(db, 'portfolio', 'socialLinks'), data);
+    }
   };
 
   // ─── COLLECTION CRUD HELPERS ──────────────────────────────────────────────
   const addExperience = async (exp) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setExperiences(prev => [...prev, { id: Date.now().toString(), ...exp }]);
+      return;
+    }
     await addDoc(collection(db, 'experiences'), exp);
   };
   const deleteExperience = async (id) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setExperiences(prev => prev.filter(item => item.id !== id));
+      return;
+    }
     await deleteDoc(doc(db, 'experiences', id));
   };
 
   const addProject = async (proj) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setProjects(prev => [...prev, { id: Date.now().toString(), ...proj }]);
+      return;
+    }
     await addDoc(collection(db, 'projects'), proj);
   };
   const deleteProject = async (id) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setProjects(prev => prev.filter(item => item.id !== id));
+      return;
+    }
     await deleteDoc(doc(db, 'projects', id));
   };
 
-  const addDocument = async (document) => {
-    await addDoc(collection(db, 'documents'), document);
+  const addDocument = async (docObj) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setDocuments(prev => [...prev, { id: Date.now().toString(), ...docObj }]);
+      return;
+    }
+    await addDoc(collection(db, 'documents'), docObj);
   };
   const deleteDocument = async (id) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setDocuments(prev => prev.filter(item => item.id !== id));
+      return;
+    }
     await deleteDoc(doc(db, 'documents', id));
   };
 
   const addCertificate = async (cert) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setCertificates(prev => [...prev, { id: Date.now().toString(), ...cert }]);
+      return;
+    }
     await addDoc(collection(db, 'certificates'), cert);
   };
   const deleteCertificate = async (id) => {
+    if (import.meta.env.VITE_OFFLINE_MODE === 'true') {
+      setCertificates(prev => prev.filter(item => item.id !== id));
+      return;
+    }
     await deleteDoc(doc(db, 'certificates', id));
   };
 

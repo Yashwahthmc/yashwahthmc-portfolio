@@ -39,6 +39,11 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, [currentWord, isDeleting, loopNum, typingSpeed, words]);
 
+  // Logic to find the primary resume
+  const resumeDoc = documents.find(doc => doc.title.toLowerCase().includes('resume')) || documents[0];
+  const resumeUrl = resumeDoc?.url || personalInfo.resumeLink;
+  const isDataUrl = resumeUrl?.startsWith('data:');
+
   return (
     <div className="home-container section animate-fade-in">
       <div className="container">
@@ -58,10 +63,10 @@ const Home = () => {
                 View Work <ArrowRight size={18} />
               </Link>
               <a 
-                href={documents.length > 0 && documents[0].url ? documents[0].url : personalInfo.resumeLink} 
+                href={resumeUrl} 
                 download="Resume.pdf" 
                 className="btn btn-outline"
-                target={documents.length > 0 && documents[0].url?.startsWith('data:') ? "_self" : "_blank"}
+                target={isDataUrl ? "_self" : "_blank"}
                 rel="noreferrer"
               >
                 <Download size={18} /> Resume
