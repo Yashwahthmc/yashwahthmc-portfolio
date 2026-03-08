@@ -5,7 +5,8 @@ import './About.css';
 
 const About = () => {
   const { aboutInfo, socialLinks, personalInfo } = usePortfolio();
-  const hasImage = !!personalInfo.heroImage;
+  const displayImage = aboutInfo.aboutImage || personalInfo.heroImage;
+  const hasImage = !!displayImage;
 
   return (
     <div className="section about-section animate-fade-in" style={{ paddingTop: '8rem' }}>
@@ -41,7 +42,7 @@ const About = () => {
           {hasImage && (
             <div className="about-image-column animate-fade-in">
               <div className="about-image-wrapper animate-float">
-                <img src={personalInfo.heroImage} alt={personalInfo.name} className="about-photo" />
+                <img src={displayImage} alt={personalInfo.name} className="about-photo" />
                 <div className="image-glass-frame"></div>
                 <div className="image-accent-border"></div>
               </div>

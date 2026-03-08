@@ -52,7 +52,7 @@ const Home = () => {
             <h2 className="greeting">Hello, World! I'm</h2>
             <h1 className="name text-gradient">{personalInfo.name}</h1>
             <h3 className="typewriter">
-              <Terminal size={24} className="terminal-icon" /> Developing <span className="word">{currentWord}</span><span className="cursor">|</span>
+              <Terminal size={24} className="terminal-icon" /> {personalInfo.typewriterPrefix || 'Developing'} <span className="word">{currentWord}</span><span className="cursor">|</span>
             </h3>
             <p className="description">
               {personalInfo.description}

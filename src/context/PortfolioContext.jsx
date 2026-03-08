@@ -23,12 +23,14 @@ export const defaultPersonalInfo = {
   brandName: 'VM',
   heroImage: 'https://raw.githubusercontent.com/ahampriyanshu/ahampriyanshu/master/assets/coder.gif',
   titles: ['Frontend Developer', 'UI/UX Designer', 'Software Engineer'],
+  typewriterPrefix: 'Developing',
   description: 'I build interactive, responsive, and performance-optimized digital experiences.',
   resumeLink: '/resume.pdf'
 };
 
 const defaultAboutInfo = {
   description: "I am a dedicated software developer with a strong focus on creating highly interactive, scalable, and visually stunning web applications.\n\nMy goal is to always build solutions that not only solve complex problems but also provide an intuitive and delightful experience for end-users.",
+  aboutImage: '',
   skills: [
     { id: 1, category: "Frontend", items: "React.js, Next.js, Vue.js, Tailwind CSS, Redux" },
     { id: 2, category: "Backend", items: "Node.js, Express, Python, MongoDB, PostgreSQL" },

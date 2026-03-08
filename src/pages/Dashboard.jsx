@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { 
   ShieldAlert, Plus, Save, Trash2, FileText, Image as ImageIcon, 
-  Home, User, Briefcase, Code, LogOut, Link2
+  Home, User, Briefcase, Code, LogOut, Link2, Eye
 } from 'lucide-react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import './Dashboard.css';
+
+// Max file sizes
+const MAX_IMAGE_SIZE_MB = 5;
+const MAX_DOC_SIZE_MB = 10;
+const MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const MAX_DOC_SIZE = MAX_DOC_SIZE_MB * 1024 * 1024;
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -38,15 +44,48 @@ const Dashboard = () => {
     }
   };
 
-  const handleImageUpload = (e, setter) => {
+  const handleImageUpload = (e, setter, maxSize = MAX_IMAGE_SIZE, maxLabel = `${MAX_IMAGE_SIZE_MB}MB`) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > maxSize) {
+        alert(`⚠️ File too large! Maximum allowed size is ${maxLabel}. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
+        e.target.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setter(reader.result);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Handle file upload for documents (PDF, DOC, etc.) with higher size limit
+  const handleDocUpload = (e, setter) => {
+    handleImageUpload(e, setter, MAX_DOC_SIZE, `${MAX_DOC_SIZE_MB}MB`);
+  };
+
+  // Handle certificate file upload — images or PDFs
+  const handleCertFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > MAX_DOC_SIZE) {
+      alert(`⚠️ File too large! Maximum allowed size is ${MAX_DOC_SIZE_MB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (file.type === 'application/pdf') {
+        setNewCertImage(''); // clear image if PDF is uploaded
+        setNewCertPdf(result);
+      } else {
+        setNewCertPdf(''); // clear PDF if image is uploaded
+        setNewCertImage(result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleHomeUpdate = async (e) => {
@@ -129,6 +168,8 @@ const Dashboard = () => {
   const [newIssuer, setNewIssuer] = useState('');
   const [newCertUrl, setNewCertUrl] = useState('');
   const [newCertImage, setNewCertImage] = useState('');
+  const [newCertPdf, setNewCertPdf] = useState('');
+  const [previewPdf, setPreviewPdf] = useState(null);
   const [newDocUrl, setNewDocUrl] = useState('');
   
   const handleAddDoc = async (e) => {
@@ -142,8 +183,15 @@ const Dashboard = () => {
   const handleAddCert = async (e) => {
     e.preventDefault();
     if (!newTitle || !newIssuer) return;
-    await addCertificate({ name: newTitle, issuer: newIssuer, date: new Date().toISOString().split('T')[0], url: newCertUrl, image: newCertImage });
-    setNewTitle(''); setNewIssuer(''); setNewCertUrl(''); setNewCertImage('');
+    await addCertificate({ 
+      name: newTitle, 
+      issuer: newIssuer, 
+      date: new Date().toISOString().split('T')[0], 
+      url: newCertUrl, 
+      image: newCertImage,
+      pdf: newCertPdf 
+    });
+    setNewTitle(''); setNewIssuer(''); setNewCertUrl(''); setNewCertImage(''); setNewCertPdf('');
   };
   const handleDeleteDoc = (id) => deleteDocument(id);
   const handleDeleteCert = (id) => deleteCertificate(id);
@@ -233,6 +281,15 @@ const Dashboard = () => {
                     />
                   </div>
                   <div className="form-group">
+                    <label>Typewriter Prefix (e.g. Developing, Building)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Developing"
+                      value={personalInfo.typewriterPrefix || ''} 
+                      onChange={(e) => setPersonalInfo({...personalInfo, typewriterPrefix: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
                     <label>Animated Titles (comma separated)</label>
                     <input 
                       type="text" 
@@ -257,8 +314,24 @@ const Dashboard = () => {
             {activeTab === 'about' && (
               <div className="tab-pane animate-fade-in">
                 <h3>About Information</h3>
-                <p className="subtitle">Update your bio and technical skills matrix.</p>
+                <p className="subtitle">Update your bio, photo, and technical skills matrix.</p>
                 <form className="add-form glass-card" onSubmit={handleAboutUpdate} style={{marginBottom: '2rem'}}>
+                  <div className="form-group">
+                    <label>About Section Photo</label>
+                    <div className="form-row">
+                      <input 
+                        type="text" 
+                        placeholder="Image URL"
+                        value={aboutInfo.aboutImage || ''} 
+                        onChange={(e) => setAboutInfo({...aboutInfo, aboutImage: e.target.value})}
+                      />
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, (res) => setAboutInfo({...aboutInfo, aboutImage: res}))}
+                      />
+                    </div>
+                  </div>
                   <div className="form-group">
                     <label>Detailed Bio</label>
                     <textarea 
@@ -267,7 +340,7 @@ const Dashboard = () => {
                       onChange={(e) => setBioLocal(e.target.value)}
                     ></textarea>
                   </div>
-                  <button type="submit" className="btn btn-primary" disabled={saving}><Save size={18}/> {saving ? 'Saving...' : 'Save Bio'}</button>
+                  <button type="submit" className="btn btn-primary" disabled={saving}><Save size={18}/> {saving ? 'Saving...' : 'Save Changes'}</button>
                 </form>
 
                 <h4 style={{marginBottom: '1rem'}}>Skill Categories</h4>
@@ -458,7 +531,7 @@ const Dashboard = () => {
                   <div className="form-row">
                     <input type="text" placeholder="Document Title (e.g. My Resume)" value={newTitle} onChange={e=>setNewTitle(e.target.value)} required/>
                     <input type="text" placeholder="External Link (Optional)" value={newDocUrl} onChange={e=>setNewDocUrl(e.target.value)} />
-                    <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => handleImageUpload(e, setNewDocUrl)} />
+                    <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => handleDocUpload(e, setNewDocUrl)} />
                     <button type="submit" className="btn btn-primary"><Plus size={18} /> Add Document</button>
                   </div>
                 </form>
@@ -493,10 +566,23 @@ const Dashboard = () => {
                  <div className="form-row" style={{marginTop:'1rem'}}>
                    <input type="text" placeholder="Certificate Link/URL (Optional)" value={newCertUrl} onChange={e=>setNewCertUrl(e.target.value)} />
                    <div style={{display:'flex', flex:1, gap:'1rem'}}>
-                     <input style={{flex:1}} type="text" placeholder="Certificate Image/PNG URL (Optional)" value={newCertImage} onChange={e=>setNewCertImage(e.target.value)} />
-                     <input style={{flex:1}} type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewCertImage)} />
+                     <input style={{flex:1}} type="text" placeholder="Image URL (Optional)" value={newCertImage} onChange={e=>{setNewCertImage(e.target.value); setNewCertPdf('');}} />
+                     <input style={{flex:1}} type="file" accept="image/*,application/pdf" onChange={handleCertFileUpload} />
                    </div>
                  </div>
+                 {(newCertImage || newCertPdf) && (
+                   <div className="cert-upload-preview" style={{marginTop:'1rem'}}>
+                     <label style={{fontSize:'0.85rem', color:'var(--text-muted)', marginBottom:'0.5rem', display:'block'}}>Preview:</label>
+                     {newCertPdf ? (
+                       <div className="pdf-preview-box">
+                         <FileText size={24} style={{color:'var(--primary-color)'}}/>
+                         <span style={{color:'var(--text-main)', fontSize:'0.9rem'}}>PDF file attached</span>
+                       </div>
+                     ) : newCertImage ? (
+                       <img src={newCertImage} alt="Preview" style={{maxWidth:'200px', maxHeight:'120px', borderRadius:'8px', border:'1px solid var(--card-border)'}}/>
+                     ) : null}
+                   </div>
+                 )}
                  <button type="submit" className="btn btn-primary" style={{marginTop:'1rem'}}><Plus size={18} /> Add</button>
                </form>
                <div className="items-list">
@@ -504,7 +590,9 @@ const Dashboard = () => {
                     <div key={cert.id} className="list-item">
                     <div className="item-info">
                       {cert.image ? (
-                        <img src={cert.image} alt={cert.name} className="item-thumbnail" />
+                        <img src={cert.image} alt={cert.name} className="cert-thumbnail" />
+                      ) : cert.pdf ? (
+                        <FileText size={20} className="item-icon" style={{color:'var(--primary-color)'}} />
                       ) : (
                         <ImageIcon size={20} className="item-icon cert-icon" />
                       )}
@@ -513,7 +601,19 @@ const Dashboard = () => {
                         <div className="item-date">Issued: {cert.date}</div>
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteCert(cert.id)} className="action-btn delete"><Trash2 size={16} /></button>
+                    <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                      {cert.pdf && (
+                        <button type="button" onClick={() => setPreviewPdf(previewPdf === cert.id ? null : cert.id)} className="action-btn" style={{color:'var(--primary-color)'}} title="Preview PDF">
+                          <Eye size={16} />
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteCert(cert.id)} className="action-btn delete"><Trash2 size={16} /></button>
+                    </div>
+                    {previewPdf === cert.id && cert.pdf && (
+                      <div className="cert-pdf-preview" style={{width:'100%', marginTop:'1rem'}}>
+                        <iframe src={cert.pdf} title={`${cert.name} PDF`} style={{width:'100%', height:'400px', border:'1px solid var(--card-border)', borderRadius:'8px', background:'#fff'}}></iframe>
+                      </div>
+                    )}
                   </div>
                  ))}
                </div>
