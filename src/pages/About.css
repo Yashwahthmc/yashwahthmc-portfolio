@@ -165,16 +165,33 @@
 
 @media (max-width: 992px) {
   .about-content {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3rem;
+  }
+  .about-content.has-image {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 480px) {
+  .about-section {
+    padding-top: 5rem !important;
+  }
+  .about-image-wrapper {
+    max-width: 320px;
+    margin: 0 auto;
+    aspect-ratio: 1; /* Square on mobile for better fit */
+  }
   .about-text {
     padding: 1.5rem;
   }
   .about-text h3 {
     font-size: 1.5rem;
+  }
+  .about-text p {
+    font-size: 1rem;
+    line-height: 1.6;
   }
   .skill-tag {
     padding: 0.4rem 0.8rem;
@@ -182,9 +199,14 @@
   }
   .contact-links {
     flex-direction: column;
+    width: 100%;
   }
   .contact-link {
     width: 100%;
     justify-content: center;
+    padding: 1rem;
+  }
+  .skills-container {
+    grid-template-columns: 1fr;
   }
 }
